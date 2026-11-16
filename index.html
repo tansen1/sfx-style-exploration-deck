@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matiks — Sonic Style Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Archivo:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F4EF;
+    --paper-dim:#EFEBE1;
+    --ink:#15161A;
+    --ink-soft:#2B2C30;
+    --signal:#E13B22;
+    --accent-music:#1E6E62;
+    --success:#1E8E3E;
+    --line:#D9D3C4;
+    --mute:#6B675C;
+    --radius:2px;
+    --wrap: min(980px, 88vw);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html, body{ height:100%; overflow:hidden; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Archivo', sans-serif; font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:inherit; text-decoration:none; }
+  .mono{ font-family:'Geist Mono', monospace; letter-spacing:0.02em; }
+  .eyebrow{
+    font-family:'Geist Mono', monospace; font-size:12px;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--mute);
+  }
+  h1, h2, h3{ font-family:'Geist', sans-serif; }
+
+  /* ---------- CHROME ---------- */
+  .deck-header{
+    position:fixed; top:0; left:0; right:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px clamp(20px, 4vw, 48px); z-index:20; pointer-events:none;
+  }
+  .deck-header .brand{ font-family:'Geist', sans-serif; font-weight:600; font-size:14px; }
+  .deck-header .count{ font-size:12px; color:var(--mute); }
+
+  .deck-footer{
+    position:fixed; bottom:0; left:0; right:0;
+    display:flex; align-items:center; justify-content:center; gap:20px;
+    padding:22px 0 28px; z-index:20;
+  }
+  .nav-btn{
+    width:36px; height:36px; border:1px solid var(--line); border-radius:50%;
+    background:var(--paper); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  }
+  .nav-btn:hover{ border-color:var(--ink); }
+  .nav-btn:disabled{ opacity:0.3; cursor:default; }
+  .nav-btn:disabled:hover{ border-color:var(--line); }
+  .nav-btn svg{ width:14px; height:14px; stroke:var(--ink); fill:none; stroke-width:2; }
+
+  .dots{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; max-width:60vw; justify-content:center; }
+  .dot{
+    width:6px; height:6px; border-radius:50%; background:var(--line);
+    cursor:pointer; transition:background .15s ease, transform .15s ease; border:none; padding:0;
+  }
+  .dot:hover{ background:var(--mute); }
+  .dot.active{ background:var(--signal); transform:scale(1.4); }
+
+  .click-zone{ position:fixed; top:0; bottom:0; width:10%; z-index:10; cursor:pointer; }
+  .click-zone.left{ left:0; }
+  .click-zone.right{ right:0; }
+
+  /* ---------- SLIDES ---------- */
+  .deck{ position:relative; width:100vw; height:100vh; }
+  .slide{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:96px clamp(20px, 6vw, 48px) 92px; opacity:0; transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease; pointer-events:none;
+  }
+  .slide.active{ opacity:1; transform:translateY(0); pointer-events:auto; z-index:2; }
+  .slide-inner{ width:var(--wrap); max-width:100%; }
+  .slide-eyebrow{ margin-bottom:14px; }
+  .slide-eyebrow .idx{ color:var(--signal); }
+
+  .statement-head h2{ font-size:clamp(26px, 3.6vw, 42px); font-weight:600; line-height:1.15; margin-bottom:14px; }
+  .statement-head .accent{ color:var(--signal); }
+  .statement-sub{ color:var(--mute); font-size:15px; max-width:620px; margin-bottom:30px; }
+
+  .big-quote{ font-size:clamp(24px,3.4vw,36px); font-weight:500; line-height:1.3; max-width:760px; }
+  .big-quote .accent{ color:var(--signal); }
+
+  /* ---- welcome / index ---- */
+  .slide-welcome .slide-inner{ width:min(760px, 90vw); }
+  .welcome-head{ margin-bottom:32px; }
+  .welcome-head .eyebrow{ margin-bottom:14px; }
+  .welcome-head h1{ font-size:clamp(32px,4.8vw,52px); font-weight:600; line-height:1.1; margin-bottom:12px; }
+  .welcome-head p{ color:var(--mute); font-size:15px; max-width:480px; }
+
+  .index-list{ display:flex; flex-direction:column; }
+  .index-item{
+    display:flex; align-items:center; gap:18px; width:100%;
+    padding:13px 4px; border:none; border-bottom:1px solid var(--line);
+    background:none; cursor:pointer; text-align:left; font-family:inherit; color:inherit;
+    transition:background .15s ease;
+  }
+  .index-item:first-child{ border-top:1px solid var(--line); }
+  .index-item:hover{ background:var(--paper-dim); }
+  .index-item .idx-num{ font-family:'Geist Mono', monospace; font-size:13px; color:var(--signal); min-width:24px; }
+  .index-item .idx-label{ font-size:15px; font-weight:500; flex:1; }
+  .index-item .idx-tag{ font-family:'Geist Mono', monospace; font-size:10.5px; color:var(--mute); }
+  .index-item .idx-arrow{ display:flex; opacity:0; transform:translateX(-4px); transition:opacity .15s ease, transform .15s ease; }
+  .index-item:hover .idx-arrow{ opacity:1; transform:translateX(0); }
+  .index-item .idx-arrow svg{ width:14px; height:14px; stroke:var(--ink); fill:none; stroke-width:2; }
+
+  /* ---- 3x3 style grid ---- */
+  .style-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .style-card{ border:1px solid var(--line); border-radius:var(--radius); padding:16px 14px; background:var(--paper-dim); transition:opacity .2s ease, border-color .2s ease; }
+  .style-card .num{ font-family:'Geist Mono', monospace; font-size:11px; color:var(--signal); margin-bottom:8px; }
+  .style-card h3{ font-size:14px; font-weight:600; margin-bottom:5px; line-height:1.25; }
+  .style-card p{ font-size:12px; color:var(--mute); line-height:1.4; }
+  .style-card.dim{ opacity:0.32; }
+  .style-card.lit{ border-color:var(--signal); background:var(--paper); }
+  .style-card.lit .num{ color:var(--signal); }
+  .style-card .ref{ font-size:11px; color:var(--mute); margin-top:6px; font-style:italic; }
+
+  /* ---- style detail slide ---- */
+  .detail-grid{ display:grid; grid-template-columns:1.1fr 1fr; gap:40px; align-items:start; }
+  .detail-keywords{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+  .detail-keywords span{ font-family:'Geist Mono',monospace; font-size:11px; border:1px solid var(--line); border-radius:var(--radius); padding:5px 10px; color:var(--mute); }
+  .detail-block{ margin-bottom:18px; }
+  .detail-block .label{ font-family:'Geist Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--mute); margin-bottom:6px; }
+  .detail-block p{ font-size:13.5px; line-height:1.5; }
+  .detail-pitch{ font-size:clamp(17px,2vw,21px); font-weight:500; line-height:1.4; border-left:2px solid var(--signal); padding-left:18px; margin-top:4px; }
+  .detail-ref{ font-size:12px; color:var(--mute); margin-top:4px; }
+
+  /* ---- comparison table ---- */
+  .compare-table{ width:100%; border-collapse:collapse; }
+  .compare-table th, .compare-table td{ text-align:left; padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .compare-table th{ font-family:'Geist Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--mute); font-weight:500; }
+  .compare-table td{ font-size:12.5px; }
+  .compare-table td.style-name{ font-weight:600; font-size:13.5px; white-space:nowrap; }
+  .compare-table td.watch{ color:var(--signal); }
+
+  /* ---- generic numbered list ---- */
+  .num-list{ display:flex; flex-direction:column; }
+  .num-item{ display:flex; align-items:baseline; gap:18px; padding:16px 0; border-bottom:1px solid var(--line); }
+  .num-item:first-child{ border-top:1px solid var(--line); }
+  .num-item .n{ font-family:'Geist Mono', monospace; font-size:13px; color:var(--signal); min-width:24px; }
+  .num-item h3{ font-size:15.5px; font-weight:600; margin-bottom:3px; }
+  .num-item p{ font-size:13px; color:var(--mute); }
+
+  @media (max-width: 720px){
+    .style-grid{ grid-template-columns:1fr 1fr; }
+    .detail-grid{ grid-template-columns:1fr; }
+    .click-zone{ width:8%; }
+    .compare-table{ font-size:11px; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="deck-header">
+    <span class="brand mono">Matiks — Sonic Style Exploration</span>
+    <span class="count mono"><span id="curIdx">01</span> / 09</span>
+  </header>
+
+  <div class="click-zone left" id="zoneLeft" aria-label="Previous slide"></div>
+  <div class="click-zone right" id="zoneRight" aria-label="Next slide"></div>
+
+  <main class="deck" id="deck">
+
+    <!-- 0. Welcome / index -->
+    <section class="slide slide-welcome active" data-slide="0">
+      <div class="slide-inner">
+        <div class="welcome-head">
+          <div class="eyebrow">Welcome</div>
+          <h1>Sonic Style <span style="color:var(--signal)">Exploration</span></h1>
+          <p>Nine sonic personalities, narrowed to four directions for discussion. Click any item below, or use the arrows, to jump around.</p>
+        </div>
+        <div class="index-list">
+          <button class="index-item" data-goto="1"><span class="idx-num mono">01</span><span class="idx-label">Sonic directions</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="2"><span class="idx-num mono">02</span><span class="idx-label">The nine styles</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="3"><span class="idx-num mono">03</span><span class="idx-label">The shortlist</span><span class="idx-tag">4 of 9</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="4"><span class="idx-num mono">04</span><span class="idx-label">Minimal / Pure Sine-Wave</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="5"><span class="idx-num mono">05</span><span class="idx-label">Playful Tactile Electronics</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="6"><span class="idx-num mono">06</span><span class="idx-label">Organic / Ambient</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="7"><span class="idx-num mono">07</span><span class="idx-label">Boutique Synth / Retro-Futurist</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+          <button class="index-item" data-goto="8"><span class="idx-num mono">08</span><span class="idx-label">Side-by-side comparison</span><span class="idx-arrow"><svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg></span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. Sonic directions -->
+    <section class="slide" data-slide="1">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">01</span> — Overview</div>
+        <p class="big-quote">Nine sonic personalities for Matiks — <span class="accent">one spectrum</span>, from retro to ambient to premium electronic.</p>
+        <p class="statement-sub" style="margin-top:26px;">Real-world references are listening and aesthetic inspiration — not claims that Matiks will copy their exact sounds. Final cues will be original.</p>
+      </div>
+    </section>
+
+    <!-- 2. The nine styles -->
+    <section class="slide" data-slide="2">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">02</span> — Full Range</div>
+        <div class="statement-head">
+          <h2>The <span class="accent">nine styles</span></h2>
+        </div>
+        <div class="style-grid">
+          <div class="style-card"><div class="num mono">01</div><h3>Retro 8-bit / Chiptune</h3><p>Nostalgic, energetic, instantly game-like.</p><div class="ref">Super Mario Bros., Tetris</div></div>
+          <div class="style-card"><div class="num mono">02</div><h3>Minimal / Pure Sine-Wave</h3><p>Clean, intelligent, precise, unobtrusive.</p><div class="ref">Windows 11, Switch menus</div></div>
+          <div class="style-card"><div class="num mono">03</div><h3>Playful Tactile Electronics</h3><p>Quirky, friendly, physically satisfying.</p><div class="ref">Playdate UI</div></div>
+          <div class="style-card"><div class="num mono">04</div><h3>Futuristic / Glitch Digital</h3><p>Tech-forward, edgy, youthful, distinctive.</p><div class="ref">Nothing Phone Glyph</div></div>
+          <div class="style-card"><div class="num mono">05</div><h3>Organic / Ambient</h3><p>Calm, thoughtful, elegant, immersive.</p><div class="ref">Monument Valley</div></div>
+          <div class="style-card"><div class="num mono">06</div><h3>Hyper-Tactile / Mechanical</h3><p>Precise, physical, premium, addictive.</p><div class="ref">Mechanical keyboards, shutters</div></div>
+          <div class="style-card"><div class="num mono">07</div><h3>Musical / Generative</h3><p>Immersive, rewarding — gameplay as instrument.</p><div class="ref">Tetris Effect, Lumines</div></div>
+          <div class="style-card"><div class="num mono">08</div><h3>Hyper-Casual / Juicy Arcade</h3><p>Energetic, rewarding; risks overwhelming.</p><div class="ref">Candy Crush Saga</div></div>
+          <div class="style-card"><div class="num mono">09</div><h3>Boutique Synth / Retro-Futurist</h3><p>Creative, design-conscious, sophisticated.</p><div class="ref">Teenage Engineering OP-1</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. The shortlist -->
+    <section class="slide" data-slide="3">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">03</span> — Narrowed Down</div>
+        <div class="statement-head">
+          <h2>The <span class="accent">shortlist</span></h2>
+          <p class="statement-sub">Four directions carried forward for discussion.</p>
+        </div>
+        <div class="style-grid">
+          <div class="style-card dim"><div class="num mono">01</div><h3>Retro 8-bit / Chiptune</h3></div>
+          <div class="style-card lit"><div class="num mono">02</div><h3>Minimal / Pure Sine-Wave</h3></div>
+          <div class="style-card lit"><div class="num mono">03</div><h3>Playful Tactile Electronics</h3></div>
+          <div class="style-card dim"><div class="num mono">04</div><h3>Futuristic / Glitch Digital</h3></div>
+          <div class="style-card lit"><div class="num mono">05</div><h3>Organic / Ambient</h3></div>
+          <div class="style-card dim"><div class="num mono">06</div><h3>Hyper-Tactile / Mechanical</h3></div>
+          <div class="style-card dim"><div class="num mono">07</div><h3>Musical / Generative</h3></div>
+          <div class="style-card dim"><div class="num mono">08</div><h3>Hyper-Casual / Juicy Arcade</h3></div>
+          <div class="style-card lit"><div class="num mono">09</div><h3>Boutique Synth / Retro-Futurist</h3></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Minimal / Pure Sine-Wave -->
+    <section class="slide" data-slide="4">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">04</span> — Shortlist 01</div>
+        <div class="statement-head">
+          <h2>Minimal / <span class="accent">Pure Sine-Wave</span></h2>
+          <p class="statement-sub">Core idea: Intelligence through restraint.</p>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-keywords"><span>Clean</span><span>Precise</span><span>Unobtrusive</span></div>
+            <div class="detail-block"><div class="label">Signature ingredients</div><p>Pure oscillators, precise pitch envelopes, clean transient shapes, extremely short feedback sounds.</p></div>
+            <div class="detail-block"><div class="label">Potential Matiks application</div><p>Keypad, navigation, answer feedback, lightweight confirmation.</p></div>
+            <div class="detail-block"><div class="label">Haptic pairing</div><p>Subtle, precisely timed taps.</p></div>
+          </div>
+          <div>
+            <p class="detail-pitch">A clean, precise sound system that never gets in the way of thinking.</p>
+            <p class="detail-ref">Listening references: Windows 11 system sounds; Nintendo Switch menu feedback.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Playful Tactile Electronics -->
+    <section class="slide" data-slide="5">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">05</span> — Shortlist 02</div>
+        <div class="statement-head">
+          <h2>Playful <span class="accent">Tactile Electronics</span></h2>
+          <p class="statement-sub">Core idea: Make the interface feel like a delightful physical object.</p>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-keywords"><span>Playful</span><span>Physical</span><span>Satisfying</span></div>
+            <div class="detail-block"><div class="label">Signature ingredients</div><p>Synth blips, toy-like percussion, springy clicks, tiny mechanical gestures.</p></div>
+            <div class="detail-block"><div class="label">Potential Matiks application</div><p>Puzzle manipulation, buttons, tile placement, correct answers, rewards.</p></div>
+            <div class="detail-block"><div class="label">Haptic pairing</div><p>Snaps, pops, short tactile impacts.</p></div>
+          </div>
+          <div>
+            <p class="detail-pitch">Every interaction feels playful, tangible, and satisfying.</p>
+            <p class="detail-ref">Listening reference: Playdate UI.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Organic / Ambient -->
+    <section class="slide" data-slide="6">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">06</span> — Shortlist 03</div>
+        <div class="statement-head">
+          <h2>Organic / <span class="accent">Ambient</span></h2>
+          <p class="statement-sub">Core idea: A calmer, more thoughtful atmosphere for puzzle-solving.</p>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-keywords"><span>Calm</span><span>Elegant</span><span>Immersive</span></div>
+            <div class="detail-block"><div class="label">Signature ingredients</div><p>Soft mallets, wood, gentle resonances, airy textures, restrained tonal cues.</p></div>
+            <div class="detail-block"><div class="label">Potential Matiks application</div><p>Puzzle transitions, focus states, completion, slow-burn progression.</p></div>
+            <div class="detail-block"><div class="label">Haptic pairing</div><p>Soft, rounded pulses; avoid unnecessary vibration.</p></div>
+          </div>
+          <div>
+            <p class="detail-pitch">A warm, immersive sound world built for concentration.</p>
+            <p class="detail-ref">Listening reference: Monument Valley.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Boutique Synth / Retro-Futurist -->
+    <section class="slide" data-slide="7">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">07</span> — Shortlist 04</div>
+        <div class="statement-head">
+          <h2>Boutique Synth / <span class="accent">Retro-Futurist</span></h2>
+          <p class="statement-sub">Core idea: A distinctive electronic identity with warmth and character.</p>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-keywords"><span>Warm</span><span>Creative</span><span>Premium</span></div>
+            <div class="detail-block"><div class="label">Signature ingredients</div><p>Analog-style oscillators, lightly saturated synth plucks, vintage electronic percussion, precise FM accents.</p></div>
+            <div class="detail-block"><div class="label">Potential Matiks application</div><p>Navigation, gameplay inputs, duel countdowns, rewards, branded sonic signatures.</p></div>
+            <div class="detail-block"><div class="label">Haptic pairing</div><p>Crisp, rhythmic, deliberately coordinated patterns.</p></div>
+          </div>
+          <div>
+            <p class="detail-pitch">Retro electronic charm with a polished, modern finish.</p>
+            <p class="detail-ref">Listening references: Teenage Engineering OP-1 and Pocket Operators.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Side-by-side comparison -->
+    <section class="slide" data-slide="8">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">08</span> — At A Glance</div>
+        <div class="statement-head">
+          <h2>Side-by-side <span class="accent">comparison</span></h2>
+        </div>
+        <table class="compare-table">
+          <thead><tr><th>Shortlisted style</th><th>Overall feel</th><th>Biggest strength</th><th>Watch-out</th></tr></thead>
+          <tbody>
+            <tr><td class="style-name">Minimal / Pure Sine-Wave</td><td>Clean, precise</td><td>Excellent for frequently repeated UI feedback</td><td class="watch">Could feel sterile without distinctive motifs</td></tr>
+            <tr><td class="style-name">Playful Tactile Electronics</td><td>Playful, physical</td><td>Makes touch interactions exceptionally satisfying</td><td class="watch">Could become overly cute or busy</td></tr>
+            <tr><td class="style-name">Organic / Ambient</td><td>Calm, elegant</td><td>Supports focus and a thoughtful puzzle experience</td><td class="watch">May lack competitive urgency without contrast</td></tr>
+            <tr><td class="style-name">Boutique Synth / Retro-Futurist</td><td>Warm, creative, premium</td><td>Strong and ownable sonic character</td><td class="watch">Needs restraint to avoid novelty overload</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="deck-footer">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24"><path d="M15 4l-8 8 8 8"/></svg>
+    </button>
+    <div class="dots" id="dots"></div>
+    <button class="nav-btn" id="nextBtn" aria-label="Next slide">
+      <svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg>
+    </button>
+  </footer>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const dotsWrap = document.getElementById('dots');
+  const curIdxEl = document.getElementById('curIdx');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function goTo(i){
+    if(i < 0 || i >= total || i === current){ return; }
+    slides[current].classList.remove('active');
+    slides[i].classList.add('active');
+    dots[current].classList.remove('active');
+    dots[i].classList.add('active');
+    current = i;
+    curIdxEl.textContent = String(current + 1).padStart(2, '0');
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+  }
+
+  function next(){ goTo(current + 1); }
+  function prev(){ goTo(current - 1); }
+
+  prevBtn.addEventListener('click', prev);
+  nextBtn.addEventListener('click', next);
+  document.getElementById('zoneLeft').addEventListener('click', prev);
+  document.getElementById('zoneRight').addEventListener('click', next);
+  prevBtn.disabled = true;
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); next(); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); prev(); }
+  });
+
+  document.querySelectorAll('[data-goto]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      goTo(parseInt(el.dataset.goto, 10));
+    });
+  });
+</script>
+
+</body>
+</html>
